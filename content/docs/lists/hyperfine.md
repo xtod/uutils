@@ -1,0 +1,183 @@
+# hyperfine 
+
+[translate-svg]: http://llever.com/translate.svg
+[translate-list]: https://github.com/chinanf-boy/chinese-translate-list
+    
+「 命令行基准测试工具 」
+
+[中文](./readme.md) | [english](https://github.com/sharkdp/hyperfine)
+
+
+---
+
+## 校对 ✅
+
+<!-- doc-templite START generated -->
+<!-- repo = 'sharkdp/hyperfine' -->
+<!-- commit = '094b76d23a74341de2e03e34eb15285895517b2b' -->
+<!-- time = '2018 9.28' -->
+翻译的原文 | 与日期 | 最新更新 | 更多
+---|---|---|---
+[commit] | ⏰ 2018 9.28 | ![last] | [中文翻译][translate-list]
+
+<!-- doc-templite END generated -->
+
+
+### 贡献
+
+欢迎 👏 勘误/校对/更新贡献 😊 [具体贡献请看](https://github.com/chinanf-boy/chinese-translate-list#贡献)
+
+## 生活
+
+[If help, **buy** me coffee —— 营养跟不上了，给我来瓶营养快线吧! 💰](https://github.com/chinanf-boy/live-need-money)
+
+---
+
+### 目录
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+
+- [hyperfine](#hyperfine)
+  - [特征](#%E7%89%B9%E5%BE%81)
+  - [用法](#%E7%94%A8%E6%B3%95)
+    - [基本基准测试](#%E5%9F%BA%E6%9C%AC%E5%9F%BA%E5%87%86%E6%B5%8B%E8%AF%95)
+    - [注重 I/O 的程序](#%E6%B3%A8%E9%87%8D-io-%E7%9A%84%E7%A8%8B%E5%BA%8F)
+    - [参数化基准](#%E5%8F%82%E6%95%B0%E5%8C%96%E5%9F%BA%E5%87%86)
+    - [导出结果](#%E5%AF%BC%E5%87%BA%E7%BB%93%E6%9E%9C)
+  - [安装](#%E5%AE%89%E8%A3%85)
+    - [macOS](#macos)
+    - [Ubuntu](#ubuntu)
+    - [Arch Linux](#arch-linux)
+    - [Void Linux](#void-linux)
+    - [Cargo (Linux,macOS,Windows)](#cargo-linuxmacoswindows)
+    - [二进制文件 (Linux,macOS,Windows)](#%E4%BA%8C%E8%BF%9B%E5%88%B6%E6%96%87%E4%BB%B6-linuxmacoswindows)
+  - [名称的由来](#%E5%90%8D%E7%A7%B0%E7%9A%84%E7%94%B1%E6%9D%A5)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+
+# hyperfine
+
+
+命令行基准测试工具 (*灵感来自[bench](https://github.com/Gabriel439/bench)*) . 
+
+**演示**: [`fd`](https://github.com/sharkdp/fd)和[`find`](https://www.gnu.org/software/findutils/) 的 基准测试:
+
+![hyperfine](/imgs/hyperfinedemo.gif)
+
+## 特征
+
+-   多次运行的统计分析. 
+-   支持任意shell命令. 
+-   关于基准进展和当前估计的持续反馈. 
+-   可以在实际基准之前,预热执行. 
+-   可以在每次定时运行之前，设置缓存清除命令. 
+-   统计异常值检测. 
+-   将结果导出为各种格式: CSV,JSON,Markdown. 
+-   参数化基准. 
+-   跨平台
+
+## 用法
+
+### 基本基准测试
+
+要运行基准测试，您只需调用即可`hyperfine <command>...`. 参数可以是任何shell命令. 例如: 
+
+```bash
+hyperfine 'sleep 0.3'
+```
+
+Hyperfine将自动确定要为每个命令执行的运行次数. 默认情况下，它将执行*至少*10个基准测试运行. 要更改此设置，您可以使用`-m`/`--min-runs`选项: 
+
+```bash
+hyperfine --min-runs 5 'sleep 0.2' 'sleep 3.2'
+```
+
+### 注重 I/O 的程序
+
+如果程序执行时间受磁盘 I/O 限制，则基准测试结果可能会受到冷还是热的磁盘缓存严重影响. 
+
+如果要在热缓存上运行基准测试，在实际基准测试之前可以使用`-w`/`--warmup`，执行一定数量的程序执行的选项(预热预热): 
+
+```bash
+hyperfine --warmup 3 'grep -R TODO *'
+```
+
+相反，如果要运行冷缓存的基准测试，可以使用这个`-p`/`--prepare`选项， 在*每次*计时运行之前，运行特定命令. 例如，要清除Linux上的硬盘缓存，可以运行
+
+```bash
+sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
+```
+
+要在 Hyperfine 中使用此特定命令，请`sudo -v`暂时获得sudo权限，然后调用: 
+
+```bash
+hyperfine --prepare 'sync; echo 3 | sudo tee /proc/sys/vm/drop_caches' 'grep -R TODO *'
+```
+
+### 参数化基准
+
+如果你想在一个参数变化的情况下运行基准测试 (比如线程数) ，你可以使用`-P`/`--parameter-scan`选项: 
+
+```bash
+hyperfine --prepare 'make clean' --parameter-scan num_threads 1 12 'make -j {num_threads}'
+```
+
+### 导出结果
+
+Hyperfine有多种导出基准测试结果的选项: CSV,JSON,Markdown (参见`--help`文字详情)。 例如，要将结果导出到Markdown，您可以使用`--export-markdown`，那将创建这样的表格: 
+
+| Command | Mean [ms] | Min…Max [ms] |
+|:---|---:|---:|
+| `find . -iregex '.*[0-9]\.jpg$'` | 506.0 ± 8.1 | 495.4…518.6 |
+| `find . -iname '*[0-9].jpg'` | 304.9 ± 3.1 | 299.8…309.3 |
+| `fd -HI '.*[0-9]\.jpg$'` | 66.2 ± 5.8 | 62.5…86.3 |
+
+## 安装
+
+### macOS
+
+Hyperfine可以通过[brew](https://brew.sh)安装: 
+
+    brew install hyperfine
+
+### Ubuntu
+
+下载相应的`.deb`包，在[releases页面](https://github.com/sharkdp/hyperfine/releases)并通过`dpkg`安装它: 
+
+```
+wget https://github.com/sharkdp/hyperfine/releases/download/v1.3.0/hyperfine_1.3.0_amd64.deb
+sudo dpkg -i hyperfine_1.3.0_amd64.deb
+```
+
+### Arch Linux
+
+在Arch Linux,可以通过[AUR](https://aur.archlinux.org/packages/hyperfine)安装hyperfine: 
+
+    yaourt -S hyperfine
+
+### Void Linux
+
+Hyperfine可以通过`xbps`安装:
+
+    xbps-install -S hyperfine
+
+### Cargo (Linux,macOS,Windows) 
+
+Hyperfine可以通过[cargo](https://doc.rust-lang.org/cargo/)安装: 
+
+    cargo install hyperfine
+
+确保使用`Rust 1.24或更高版本`. 
+
+### 二进制文件 (Linux,macOS,Windows) 
+
+从[releases页面](https://github.com/sharkdp/hyperfine/releases)中下载相应的打包文件. 
+
+## 名称的由来
+
+名字*hyperfine*是根据 铯133 的 hyperfine 能级选择的,铯133的这一能级的频率[定义了我们的基本时间单位-1秒钟](https://en.wikipedia.org/wiki/Second#History_of_definition) 
+
+> 译：（课外知识）李永乐老师, 一秒究竟有多长 [youtube](https://www.youtube.com/watch?v=cXX_f_pWLQI) | [bilibili](https://www.bilibili.com/video/av34102893?from=search&seid=7806962251356954355)

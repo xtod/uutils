@@ -1,4 +1,5 @@
 ---
-title: Rust App List
+title: RustApplication
 bookFlatSection: true
+bookCollapseSection: true
 ---
